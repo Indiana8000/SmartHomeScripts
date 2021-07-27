@@ -33,7 +33,7 @@ my $FramePos = 0;
 my $deep = 0;
 my @res;
 my %obis = ();
-my $ctx = Digest::CRC->new(width=>16, init=>0x0000, xorout=>0xffff, refout=>1, poly=>0x1021, refin=>1, cont=>1);
+my $ctx = Digest::CRC->new(width=>16, init=>0xffff, xorout=>0xffff, refout=>1, poly=>0x1021, refin=>1, cont=>0);
 my $crc;
 my $sleepS;
 
@@ -134,7 +134,7 @@ while(1) { #Main Loop
 		);
 		print "1of4 Framestart";
 
-		$ctx->reset(width=>16, init=>0x0000, xorout=>0xffff, refout=>1, poly=>0x1021, refin=>1, cont=>1);
+		$ctx->reset(width=>16, init=>0xffff, xorout=>0xffff, refout=>1, poly=>0x1021, refin=>1, cont=>0);
 		$ctx->add(chr(0x1b),chr(0x1b),chr(0x1b),chr(0x1b));
 		$ctx->add(chr(0x01),chr(0x01),chr(0x01),chr(0x01));
 		$FrameRxCTR = 0;
@@ -197,7 +197,7 @@ while(1) { #Main Loop
 	@res = getArray();
 	print("SML Part 2 - ") if($showDebug);
 	@res = getArray();
-	print("SML Part 3 - ")if($showDebug);
+	print("SML Part 3 - ") if($showDebug);
 	@res = getArray();
 	
 	print("OBIS Extract:\n");
