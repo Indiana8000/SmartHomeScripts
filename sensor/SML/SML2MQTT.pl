@@ -8,6 +8,7 @@
 #
 use warnings;
 use strict;
+
 use Try::Tiny;
 use Device::SerialPort;
 use Digest::CRC;
