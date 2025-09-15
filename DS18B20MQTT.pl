@@ -13,9 +13,9 @@ use Net::MQTT::Simple;
 my $general_delay = 20;
 
 my $mqtt_host = "mqtt_host";
-my $mqtt_topic = "DS18B20";
 my $mqtt_username = "mqtt_username";
 my $mqtt_password = "mqtt_password";
+my $mqtt_topic = "DS18B20";
 
 my $ds18b20_count = 5;
 my $ds18b20_file = '/sys/bus/w1/devices/w1_bus_master1/w1_master_slaves';
