@@ -1,5 +1,8 @@
 #!/usr/bin/perl
 #
+# 1-Wire temperature probe
+# https://en.wikipedia.org/wiki/DS18B20
+#
 # MQTT login with password but without ssl:
 # export MQTT_SIMPLE_ALLOW_INSECURE_LOGIN=true
 #
@@ -100,4 +103,4 @@ while(1) {
         }
     }
 	sleep($general_delay);
-}
+} #END Main Loop

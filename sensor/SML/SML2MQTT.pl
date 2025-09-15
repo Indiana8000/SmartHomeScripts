@@ -1,19 +1,37 @@
 #!/usr/bin/perl -w
-use Try::Tiny;
-use strict;
+#
+# Smart Message Language
+# https://de.wikipedia.org/wiki/Smart_Message_Language
+#
+# MQTT login with password but without ssl:
+# export MQTT_SIMPLE_ALLOW_INSECURE_LOGIN=true
+#
 use warnings;
+use strict;
+use Try::Tiny;
 use Device::SerialPort;
 use Digest::CRC;
 use POSIX qw(strftime);
+use Net::MQTT::Simple;
 
+# Configuration
+# Define the second of a minute when the value should be read
+my $second_to_read = 55;
+
+my $mqtt_host = "mqtt_host";
+my $mqtt_username = "mqtt_username";
+my $mqtt_password = "mqtt_password";
+my $mqtt_topic = "SML";
 
 #Output Options
-my $showRaw   = 1;
-my $showDebug = 1;
-
+my $showRaw     = 0;
+my $showDebug   = 0;
+my $writeToFile = 1;
+my $sendToMqtt  = 1;
 
 #Init Serial Port
-my $serial = Device::SerialPort->new("/dev/ttyUSB0");
+#my $serial = Device::SerialPort->new("/dev/ttyUSB0");
+my $serial = Device::SerialPort->new("/dev/serial/by-id/usb-FTDI_FT230X_Basic_UART_D30AB3LO-if00-port0");
 $serial->baudrate(9600);
 $serial->databits(8);
 $serial->stopbits(1);
@@ -23,9 +41,16 @@ $serial->rts_active(0);
 $serial->dtr_active(0);	
 my($ser_count_in, $ser_bytes_in) = $serial->read(1);
 
+#Init MqTT
+our $mqtt;
+if($sendToMqtt) {
+	$mqtt = Net::MQTT::Simple->new($mqtt_host);
+	$mqtt->login($mqtt_username, $mqtt_password);
+}
+
 
 #Variablen
-my @DetectStart = (0..7);
+my @DetectStart = (0..7); #Zum erkennen der 8-Byte Startsequenz
 my @RxBuffer = (0..10000);
 my $FrameRxCTR = 0;
 my $FrameCRC = 0;
@@ -36,10 +61,11 @@ my %obis = ();
 my $ctx = Digest::CRC->new(width=>16, init=>0xffff, xorout=>0xffff, refout=>1, poly=>0x1021, refin=>1, cont=>0);
 my $crc;
 my $sleepS;
-
+our %last=();
 
 #Subroutinen
 sub getType {
+	#while($RxBuffer[$FramePos] == 0) $FramePos++;
 	if(substr(sprintf("%02x", $RxBuffer[$FramePos]), 0, 1) == "7") {
 		print(('   ' x $deep)."A - ") if($showDebug);
 		return 0;
@@ -134,7 +160,7 @@ while(1) { #Main Loop
 		);
 		print "1of4 Framestart";
 
-		$ctx->reset(width=>16, init=>0xffff, xorout=>0xffff, refout=>1, poly=>0x1021, refin=>1, cont=>0);
+		$ctx->reset(width=>16, init=>0x0000, xorout=>0xffff, refout=>1, poly=>0x1021, refin=>1, cont=>1);
 		$ctx->add(chr(0x1b),chr(0x1b),chr(0x1b),chr(0x1b));
 		$ctx->add(chr(0x01),chr(0x01),chr(0x01),chr(0x01));
 		$FrameRxCTR = 0;
@@ -184,7 +210,6 @@ while(1) { #Main Loop
 		}
 	} until ($crc eq sprintf("%02x%02x",$RxBuffer[$FrameRxCTR-1], $RxBuffer[$FrameRxCTR-2]));
 
-
 	if($showRaw) {
 		for ($FramePos=0; $FramePos < $FrameRxCTR; $FramePos++) {
 			printf("%02x ", $RxBuffer[$FramePos]);
@@ -199,14 +224,30 @@ while(1) { #Main Loop
 	@res = getArray();
 	print("SML Part 3 - ") if($showDebug);
 	@res = getArray();
-	
-	print("OBIS Extract:\n");
+
+	print("OBIS Changed:\n");
 	foreach my $i (sort keys %obis) {
-		print($i." = ".$obis{$i}."\n");
+		my $ii = ($i =~ s/ /_/gr);
+		if(!exists $last{$ii}) {
+			$last{$ii} = -99999;
+		}
+		if($last{$ii} ne $obis{$i}) {
+			print($i." = ".$obis{$i}."\n");
+			if($writeToFile) {
+				my $filename = "/tmp/OBIS_" . $ii;
+				open(FH, '>>', $filename);
+				print FH $obis{$i} . "\n";
+				close(FH);
+			}
+			if($sendToMqtt) {
+				$mqtt->retain($mqtt_topic . "/" . $ii => $obis{$i});
+			}
+			$last{$ii} = $obis{$i};
+		}
 	}
 
-
-	$sleepS = 60 - strftime("%S", localtime);
+	$sleepS = 60 - strftime("%S", localtime) + $second_to_read;
+	if($sleepS > 60) {$sleepS -= 60;}
 	print "Sleep: " . $sleepS . " seconds\n";
 	sleep($sleepS);
 } #END Main Loop
