@@ -6,7 +6,7 @@ My script is based on:
 
 https://github.com/tichachm/fronius_smart_meter_modbus_tcp_emulator/blob/main/froniussimulator_3_noCheckMK.py
 
-Wich is based on:
+Which is based on:
 
 https://www.photovoltaikforum.com/thread/185108-fronius-smart-meter-tcp-protokoll
 
