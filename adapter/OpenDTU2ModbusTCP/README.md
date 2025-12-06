@@ -13,6 +13,11 @@ https://www.photovoltaikforum.com/thread/185108-fronius-smart-meter-tcp-protokol
 
 # Installation
 
+Need to run as root because Port 502 is required!
+
+Easiest way is to directly install all as root.
+
+
 ## Operating System
 
 ### Debian/Ubuntu
@@ -35,9 +40,8 @@ Or install manually
 
     pip install paho-mqtt pymodbus
 
-### Run as root
-Need to run as root because Port 502 is required
+### Autostart
 
-Example how to start the script into a screen session with crontab
+Example how to start the script with venv into a screen session by crontab
 
     @reboot screen -dmS MyScreen ~/o2mb/bin/python ~/o2mb/DTU2MB.py
