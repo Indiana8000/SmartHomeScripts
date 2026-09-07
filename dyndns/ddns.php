@@ -29,7 +29,9 @@ if(!empty($_REQUEST['username']) && !empty($_REQUEST['hostname']) && !empty($_RE
 print('OK');
 
 function addLog($extra = "") {
-    $msg = date("c") . " - " . getUserIpAddr() . " - " . http_build_query($_REQUEST, '', ' / ');
+    $params = $_REQUEST;
+    if(isset($params['password'])) $params['password'] = '***';
+    $msg = date("c") . " - " . getUserIpAddr() . " - " . http_build_query($params, '', ' / ');
     if(!empty($extra)) $msg .= " - " . $extra;
     $file = fopen("ddns.log", "a");
     fwrite($file, $msg . PHP_EOL);
@@ -89,7 +91,6 @@ function putZone($domain, $zone) {
     curl_setopt($ch, CURLOPT_POSTFIELDS, $zone);
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     $ret = curl_exec($ch);
-    curl_close($ch);
     return $ret;
 }
 
