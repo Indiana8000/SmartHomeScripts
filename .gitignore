@@ -65,4 +65,5 @@ inc/
 
 # php
 config.php
+config.hetzner.php
 
